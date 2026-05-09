@@ -187,26 +187,57 @@ export default function App() {
     { id: 'part6', label: '六、术语索引', icon: BookOpen },
   ], []);
 
+  // ── 导航高亮：用 IntersectionObserver 追踪哪个 section 最靠近视口顶部 ──
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollPosition = window.scrollY + window.innerHeight / 3;
-      let currentActive = 'preface';
-      for (const item of navItems) {
-        const element = document.getElementById(item.id);
-        if (element) {
-          const offsetTop = element.offsetTop;
-          if (scrollPosition >= offsetTop) {
-            currentActive = item.id;
-          }
-        }
-      }
-      setActiveSection(currentActive);
-    };
+    // 记录每个被观测元素当前的交叉信息
+    const ratioMap = new Map<string, number>();
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Call once to set initial state
-    return () => window.removeEventListener('scroll', handleScroll);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          ratioMap.set(entry.target.id, entry.intersectionRatio);
+        });
+
+        // 在所有可见元素中，选取 boundingClientRect.top 最接近 0（视口顶部）且已进入视口的那个
+        let bestId = '';
+        let bestTop = Infinity;
+
+        ratioMap.forEach((ratio, id) => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          const top = el.getBoundingClientRect().top;
+          // 只考虑顶部还在视口内（top < 视口高度）且未完全滚过（top > -el.offsetHeight）的元素
+          if (top <= window.innerHeight && top > -el.offsetHeight) {
+            // 优先选 top 最接近 0 但仍 <= viewport 1/2 高度的元素
+            const score = Math.abs(top - window.innerHeight * 0.15);
+            if (score < bestTop) {
+              bestTop = score;
+              bestId = id;
+            }
+          }
+        });
+
+        if (bestId) setActiveSection(bestId);
+      },
+      {
+        // 从视口顶部 -20% 到底部 -20% 的区间内触发，确保滚动时快速更新
+        rootMargin: '-5% 0px -75% 0px',
+        threshold: [0, 0.1, 0.5, 1.0],
+      }
+    );
+
+    // 观测所有 navItems 对应的 DOM 元素
+    navItems.forEach(({ id }) => {
+      const el = document.getElementById(id);
+      if (el) {
+        ratioMap.set(id, 0);
+        observer.observe(el);
+      }
+    });
+
+    return () => observer.disconnect();
   }, [navItems]);
+
 
   const startResizing = useCallback(() => setIsResizing(true), []);
   const stopResizing = useCallback(() => setIsResizing(false), []);
