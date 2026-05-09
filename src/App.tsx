@@ -154,7 +154,8 @@ export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(288);
   const [isResizing, setIsResizing] = useState(false);
-  const sidebarRef = useRef<HTMLDivElement>(null);
+  const sidebarRef    = useRef<HTMLDivElement>(null);
+  const navScrollRef  = useRef<HTMLDivElement>(null); // 侧边栏滚动容器
 
   const navItems = useMemo(() => [
     { id: 'preface', label: '卷首语', icon: BookOpen },
@@ -180,8 +181,6 @@ export default function App() {
     { id: slugify('4.3 RPT核心算法执行流程'), label: '4.3 RPT核心算法执行流程', isSub: true },
     { id: slugify('4.4 Y+核心算法执行流程'), label: '4.4 Y+核心算法执行流程', isSub: true },
     { id: slugify('4.5 问题记录'), label: '4.5 问题记录', isSub: true },
-    { id: slugify('4.6 复现实验结果'), label: '4.6 复现实验结果', isSub: true },
-    { id: slugify('4.7 专刊复现结论：RPT 复现对比'), label: '4.7 专刊复现结论: RPT 复现对比', isSub: true },
 
     { id: 'part5', label: '五、参考文献', icon: BookOpen },
     { id: 'part6', label: '六、术语索引', icon: BookOpen },
@@ -253,6 +252,25 @@ export default function App() {
     return () => { window.removeEventListener("mousemove", resize); window.removeEventListener("mouseup", stopResizing); };
   }, [resize, stopResizing]);
 
+  // ── activeSection 变化时，自动将对应导航条目滚动到侧边栏可见区域 ──────────
+  useEffect(() => {
+    if (!navScrollRef.current) return;
+    const btn = navScrollRef.current.querySelector<HTMLElement>(
+      `[data-nav-id="${activeSection}"]`
+    );
+    if (!btn) return;
+    const container = navScrollRef.current;
+    const btnTop = btn.offsetTop;
+    const btnBot = btnTop + btn.offsetHeight;
+    const cTop   = container.scrollTop;
+    const cBot   = cTop + container.clientHeight;
+    if (btnTop < cTop + 56) {
+      container.scrollTo({ top: Math.max(0, btnTop - 56), behavior: 'smooth' });
+    } else if (btnBot > cBot - 56) {
+      container.scrollTo({ top: btnBot - container.clientHeight + 56, behavior: 'smooth' });
+    }
+  }, [activeSection]);
+
   const scrollTo = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
@@ -289,7 +307,7 @@ export default function App() {
               </h1>
             </div>
 
-            <div className="px-4 py-6 overflow-y-auto overflow-x-hidden custom-scrollbar flex-1">
+            <div ref={navScrollRef} className="px-4 py-6 overflow-y-auto overflow-x-hidden custom-scrollbar flex-1">
               <ul className="space-y-1">
                 {navItems.map((item) => {
                   const isActive = activeSection === item.id;
@@ -297,6 +315,7 @@ export default function App() {
                   return (
                     <li key={item.id}>
                       <button
+                        data-nav-id={item.id}
                         onClick={() => scrollTo(item.id)}
                         className={`w-full text-left px-3 py-2.5 rounded-md text-sm transition-all duration-200 flex items-center gap-3
                           ${isSub ? 'ml-6 pl-4 border-l-2 text-xs' : 'font-bold tracking-wide'}
