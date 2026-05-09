@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import mermaid from 'mermaid';
 
 // 整体视觉缩放倍率（不改变字号配置，只改变渲染尺寸）
-const SCALE = 1.6;
+const SCALE = 0.65;
 
 export const MermaidWrapper: React.FC<{ chart: string }> = ({ chart }) => {
   const [svg, setSvg] = useState<string>('');
@@ -16,7 +16,7 @@ export const MermaidWrapper: React.FC<{ chart: string }> = ({ chart }) => {
       fontSize: 16,
       // useMaxWidth: false → mermaid 输出固定像素宽高，便于 zoom 生效
       flowchart: { useMaxWidth: false, htmlLabels: true },
-      sequence:  { useMaxWidth: false },
+      sequence: { useMaxWidth: false },
     });
 
     let isMounted = true;
