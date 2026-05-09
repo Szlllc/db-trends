@@ -451,8 +451,7 @@ export default function App() {
               {[
                 algorithmReproduction.sec4_1, algorithmReproduction.sec4_2,
                 algorithmReproduction.sec4_3, algorithmReproduction.sec4_4,
-                algorithmReproduction.sec4_5, algorithmReproduction.repro_results,
-                algorithmReproduction.repro_conclusions,
+                algorithmReproduction.sec4_5,
               ].map((section, i, arr) => (
                 <React.Fragment key={i}>
                   <MD>{section}</MD>
