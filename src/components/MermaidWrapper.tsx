@@ -1,6 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mermaid from 'mermaid';
 
+// 等比放大 SVG 尺寸，不改变字号
+const SCALE = 1.6;
+
+function scaleSvgDimensions(svgString: string, factor: number): string {
+  // 只处理数值型的 width / height（跳过 "100%" 等百分比）
+  return svgString
+    .replace(/(\swidth=")(\d+(?:\.\d+)?)(")/,  (_, a, w, b) => `${a}${parseFloat(w) * factor}${b}`)
+    .replace(/(\sheight=")(\d+(?:\.\d+)?)(")/,  (_, a, h, b) => `${a}${parseFloat(h) * factor}${b}`);
+}
+
 export const MermaidWrapper: React.FC<{ chart: string }> = ({ chart }) => {
   const [svg, setSvg] = useState<string>('');
   const id = useRef(`mermaid-${Math.random().toString(36).substring(7)}`);
@@ -14,25 +24,21 @@ export const MermaidWrapper: React.FC<{ chart: string }> = ({ chart }) => {
       flowchart: { useMaxWidth: true, htmlLabels: true },
       sequence:  { useMaxWidth: true },
     });
-    
+
     let isMounted = true;
     const renderChart = async () => {
       try {
         const { svg: renderedSvg } = await mermaid.render(id.current, chart);
         if (isMounted) {
-          setSvg(renderedSvg);
+          setSvg(scaleSvgDimensions(renderedSvg, SCALE));
         }
       } catch (err) {
         console.error('Mermaid render error', err);
-        // Sometimes mermaid errors insert a fallback SVG into the DOM manually,
-        // we can ignore or let it be.
       }
     };
     renderChart();
-    
-    return () => {
-      isMounted = false;
-    };
+
+    return () => { isMounted = false; };
   }, [chart]);
 
   return (
