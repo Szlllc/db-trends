@@ -2,12 +2,31 @@ import React, { useMemo, useRef, useCallback, useEffect } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { knowledgeGraphData } from '../data';
 
-const COLORS = {
-  paper:       '#3b82f6',
-  author:      '#10b981',
-  corresponding: '#06d6a0',
-  institution: '#f59e0b',
+// 机构名英译中
+const INST_ZH: Record<string, string> = {
+  'Bell Laboratories':                          'Bell 实验室',
+  'Hong Kong Baptist University':               '香港浸会大学',
+  'Hong Kong University of Science and Technology': '香港科技大学',
+  'Alibaba Group':                              '阿里巴巴',
+  'University of Wisconsin–Madison':            '威斯康星大学麦迪逊分校',
+  'Tsinghua University':                        '清华大学',
+  'Tsinghua University; Shanghai Qi Zhi Institute': '清华大学；上海期智研究院',
+  'CWI':                                        'CWI（荷兰国家数学与计算机科学研究中心）',
+  'EPFL':                                       '瑞士联邦理工学院（EPFL）',
+  'Gray Systems Lab, Microsoft':                '微软 Gray Systems Lab',
+  'Microsoft Research':                         '微软研究院',
+  'SQL Server, Microsoft':                      '微软 SQL Server 团队',
+  'SQL DW, Microsoft':                          '微软 SQL DW 团队',
+  'KACST':                                      'KACST（沙特阿拉伯国家科学技术城）',
 };
+const toZh = (name: string) => INST_ZH[name] ?? name;
+
+const COLORS = {
+  paper:         '#3b82f6',
+  author:        '#10b981',
+  institution:   '#f59e0b',
+};
+
 const INITIAL_ZOOM = 0.85;
 
 export const KnowledgeGraph: React.FC = () => {
@@ -49,17 +68,17 @@ export const KnowledgeGraph: React.FC = () => {
       p.authors.forEach((a: any) => {
         if (!added.has(a.name)) {
           nodes.push({ id: a.name, name: a.name, category: 1,
-            symbolSize: 18 + (deg[a.name] || 0) * 5, value: a.is_corresponding ? '通讯作者' : '作者',
-            itemStyle: { color: a.is_corresponding ? COLORS.corresponding : COLORS.author,
-              borderWidth: a.is_corresponding ? 2.5 : 0, borderColor: '#fff' },
+            symbolSize: 18 + (deg[a.name] || 0) * 5, value: '作者',
+            itemStyle: { color: COLORS.author },
             label: { show: true, position: 'right', fontSize: 11, color: '#334155' },
           });
           added.add(a.name);
         }
         (a.institution?.split('、') ?? []).forEach((inst: string) => {
           const iid = `inst-${inst}`;
+          const zhName = toZh(inst);
           if (!added.has(iid)) {
-            nodes.push({ id: iid, name: inst, category: 2, symbol: 'roundRect',
+            nodes.push({ id: iid, name: zhName, category: 2, symbol: 'roundRect',
               symbolSize: 22 + (deg[iid] || 0) * 6,
               itemStyle: { color: COLORS.institution, borderRadius: 6 },
               label: { show: true, position: 'bottom', fontSize: 11, color: '#92400e' },
@@ -188,10 +207,9 @@ export const KnowledgeGraph: React.FC = () => {
       {/* 图例 */}
       <div className="px-4 py-2 border-t border-slate-100 bg-slate-50 flex items-center gap-4 flex-wrap">
         {([
-          [COLORS.paper,        '论文节点'],
-          [COLORS.author,       '作者节点'],
-          [COLORS.corresponding,'通讯作者'],
-          [COLORS.institution,  '机构节点'],
+          [COLORS.paper,       '论文节点'],
+          [COLORS.author,      '作者节点'],
+          [COLORS.institution, '机构节点'],
         ] as const).map(([color, label]) => (
           <span key={label} className="flex items-center gap-1.5 text-xs text-slate-500 font-sans">
             <span className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color }} />
