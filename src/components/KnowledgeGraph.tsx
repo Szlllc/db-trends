@@ -4,36 +4,36 @@ import { knowledgeGraphData } from '../data';
 
 // 机构名英译中
 const INST_ZH: Record<string, string> = {
-  'Bell Laboratories':                          'Bell 实验室',
-  'Hong Kong Baptist University':               '香港浸会大学',
+  'Bell Laboratories': 'Bell 实验室',
+  'Hong Kong Baptist University': '香港浸会大学',
   'Hong Kong University of Science and Technology': '香港科技大学',
-  'Alibaba Group':                              '阿里巴巴',
-  'University of Wisconsin–Madison':            '威斯康星大学麦迪逊分校',
-  'Tsinghua University':                        '清华大学',
+  'Alibaba Group': '阿里巴巴',
+  'University of Wisconsin–Madison': '威斯康星大学麦迪逊分校',
+  'Tsinghua University': '清华大学',
   'Tsinghua University; Shanghai Qi Zhi Institute': '清华大学；上海期智研究院',
-  'CWI':                                        'CWI（荷兰国家数学与计算机科学研究中心）',
-  'EPFL':                                       '瑞士联邦理工学院（EPFL）',
-  'Gray Systems Lab, Microsoft':                '微软 Gray Systems Lab',
-  'Microsoft Research':                         '微软研究院',
-  'SQL Server, Microsoft':                      '微软 SQL Server 团队',
-  'SQL DW, Microsoft':                          '微软 SQL DW 团队',
-  'KACST':                                      'KACST（沙特阿拉伯国家科学技术城）',
+  'CWI': 'CWI（荷兰国家数学与计算机科学研究中心）',
+  'EPFL': '瑞士联邦理工学院（EPFL）',
+  'Gray Systems Lab, Microsoft': '微软 Gray Systems Lab',
+  'Microsoft Research': '微软研究院',
+  'SQL Server, Microsoft': '微软 SQL Server 团队',
+  'SQL DW, Microsoft': '微软 SQL DW 团队',
+  'KACST': 'KACST（沙特阿拉伯国家科学技术城）',
 };
 const toZh = (name: string) => INST_ZH[name] ?? name;
 
 const COLORS = {
-  paper:         '#3b82f6',
-  author:        '#10b981',
-  institution:   '#f59e0b',
+  paper: '#3b82f6',
+  author: '#10b981',
+  institution: '#f59e0b',
 };
 
 const INITIAL_ZOOM = 0.85;
 
 export const KnowledgeGraph: React.FC = () => {
-  const echartsRef  = useRef<ReactECharts>(null);
-  const zoomRef     = useRef(INITIAL_ZOOM);
-  const isDragging  = useRef(false);
-  const lastPos     = useRef({ x: 0, y: 0 });
+  const echartsRef = useRef<ReactECharts>(null);
+  const zoomRef = useRef(INITIAL_ZOOM);
+  const isDragging = useRef(false);
+  const lastPos = useRef({ x: 0, y: 0 });
 
   // ── 图谱数据 ─────────────────────────────────────────────────────────────
   const { nodes, links, categories } = useMemo(() => {
@@ -45,20 +45,21 @@ export const KnowledgeGraph: React.FC = () => {
     knowledgeGraphData.forEach((p: any) => {
       p.authors.forEach((a: any) => {
         links.push({ source: a.name, target: p.paper_id });
-        deg[a.name]    = (deg[a.name]    || 0) + 1;
+        deg[a.name] = (deg[a.name] || 0) + 1;
         deg[p.paper_id] = (deg[p.paper_id] || 0) + 1;
         (a.institution?.split('、') ?? []).forEach((inst: string) => {
           const iid = `inst-${inst}`;
           links.push({ source: a.name, target: iid });
           deg[a.name] = (deg[a.name] || 0) + 1;
-          deg[iid]    = (deg[iid]    || 0) + 1;
+          deg[iid] = (deg[iid] || 0) + 1;
         });
       });
     });
 
     knowledgeGraphData.forEach((p: any) => {
       if (!added.has(p.paper_id)) {
-        nodes.push({ id: p.paper_id, name: p.paper_id, category: 0,
+        nodes.push({
+          id: p.paper_id, name: p.paper_id, category: 0,
           symbolSize: 34 + (deg[p.paper_id] || 0) * 7, value: p.title,
           itemStyle: { color: COLORS.paper, shadowBlur: 10, shadowColor: 'rgba(59,130,246,0.35)' },
           label: { show: true, position: 'inside', fontSize: 11, fontWeight: 'bold', color: '#fff' },
@@ -67,7 +68,8 @@ export const KnowledgeGraph: React.FC = () => {
       }
       p.authors.forEach((a: any) => {
         if (!added.has(a.name)) {
-          nodes.push({ id: a.name, name: a.name, category: 1,
+          nodes.push({
+            id: a.name, name: a.name, category: 1,
             symbolSize: 18 + (deg[a.name] || 0) * 5, value: '作者',
             itemStyle: { color: COLORS.author },
             label: { show: true, position: 'right', fontSize: 11, color: '#334155' },
@@ -78,7 +80,8 @@ export const KnowledgeGraph: React.FC = () => {
           const iid = `inst-${inst}`;
           const zhName = toZh(inst);
           if (!added.has(iid)) {
-            nodes.push({ id: iid, name: zhName, category: 2, symbol: 'roundRect',
+            nodes.push({
+              id: iid, name: zhName, category: 2, symbol: 'roundRect',
               symbolSize: 22 + (deg[iid] || 0) * 6,
               itemStyle: { color: COLORS.institution, borderRadius: 6 },
               label: { show: true, position: 'bottom', fontSize: 11, color: '#92400e' },
@@ -166,13 +169,13 @@ export const KnowledgeGraph: React.FC = () => {
 
       canvas.addEventListener('mousedown', onDown);
       window.addEventListener('mousemove', onMove);
-      window.addEventListener('mouseup',   onUp);
+      window.addEventListener('mouseup', onUp);
       canvas.style.cursor = 'grab';
 
       return () => {
         canvas.removeEventListener('mousedown', onDown);
         window.removeEventListener('mousemove', onMove);
-        window.removeEventListener('mouseup',   onUp);
+        window.removeEventListener('mouseup', onUp);
       };
     }, 800); // force layout 稳定后再绑定
 
@@ -185,10 +188,10 @@ export const KnowledgeGraph: React.FC = () => {
       {/* 工具栏 */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 bg-slate-50">
         <span className="text-xs text-slate-500 font-sans select-none">
-          拖拽平移 · 滚轮缩放 · 点击节点高亮邻居
+          拖拽平移 · 点击右上角按钮放缩
         </span>
         <div className="flex items-center gap-1.5">
-          {([['＋','放大',() => applyZoom(1.3)],['－','缩小',() => applyZoom(1/1.3)],['⊙','恢复默认',handleReset]] as const).map(([label, title, onClick]) => (
+          {([['＋', '放大', () => applyZoom(1.3)], ['－', '缩小', () => applyZoom(1 / 1.3)], ['⊙', '恢复默认', handleReset]] as const).map(([label, title, onClick]) => (
             <button key={title} title={title} onClick={onClick}
               className="w-7 h-7 rounded border border-slate-200 bg-white text-slate-600 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 text-base leading-none flex items-center justify-center transition-colors font-sans shadow-sm select-none">
               {label}
@@ -207,8 +210,8 @@ export const KnowledgeGraph: React.FC = () => {
       {/* 图例 */}
       <div className="px-4 py-2 border-t border-slate-100 bg-slate-50 flex items-center gap-4 flex-wrap">
         {([
-          [COLORS.paper,       '论文节点'],
-          [COLORS.author,      '作者节点'],
+          [COLORS.paper, '论文节点'],
+          [COLORS.author, '作者节点'],
           [COLORS.institution, '机构节点'],
         ] as const).map(([color, label]) => (
           <span key={label} className="flex items-center gap-1.5 text-xs text-slate-500 font-sans">
