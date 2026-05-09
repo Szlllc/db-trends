@@ -79,11 +79,11 @@ const MarkdownComponents: any = {
   code: ({ className, children, node, ...props }: any) => {
     const match = /language-(\w+)/.exec(className || '');
     const isInline = !match && node?.position?.start?.line === node?.position?.end?.line;
-    
+
     if (match && match[1] === 'mermaid') {
       return <MermaidWrapper chart={String(children)} />;
     }
-    
+
     if (!isInline && match) {
       return (
         <div className="rounded-md overflow-hidden border border-slate-200 shadow-sm block w-full">
@@ -98,7 +98,7 @@ const MarkdownComponents: any = {
         </div>
       );
     }
-    
+
     return (
       <code className="bg-slate-100 text-[#0f172a] font-mono px-1.5 py-0.5 rounded text-[0.85em] border border-slate-200 shadow-sm" {...props}>
         {children}
@@ -131,12 +131,12 @@ const MOTION_PROPS = { initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1
 
 // 各篇论文的原文与双语翻译链接（顺序与 paperDeepDives 一致）
 const PAPER_LINKS = [
-  { original: 'http://tprd-outline.dameng.com/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E5%8F%8C%E8%AF%AD%E7%BF%BB%E8%AF%91',    bilingual: 'http://tprd-outline.dameng.com/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E5%8F%8C%E8%AF%AD%E7%BF%BB%E8%AF%91' },
-  { original: 'http://tprd-outline.dameng.com/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E8%AE%BA%E6%96%87%E5%8E%9F%E6%96%87-1', bilingual: 'http://tprd-outline.dameng.com/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E5%8F%8C%E8%AF%AD%E7%BF%BB%E8%AF%91-1' },
-  { original: 'http://tprd-outline.dameng.com/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E8%AE%BA%E6%96%87%E5%8E%9F%E6%96%87-2', bilingual: 'http://tprd-outline.dameng.com/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E5%8F%8C%E8%AF%AD%E7%BF%BB%E8%AF%91-2' },
-  { original: 'http://tprd-outline.dameng.com/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E8%AE%BA%E6%96%87%E5%8E%9F%E6%96%87-3', bilingual: 'http://tprd-outline.dameng.com/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E5%8F%8C%E8%AF%AD%E7%BF%BB%E8%AF%91-3' },
-  { original: 'http://tprd-outline.dameng.com/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E8%AE%BA%E6%96%87%E5%8E%9F%E6%96%87-4', bilingual: 'http://tprd-outline.dameng.com/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E5%8F%8C%E8%AF%AD%E7%BF%BB%E8%AF%91-4' },
-  { original: 'http://tprd-outline.dameng.com/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E8%AE%BA%E6%96%87%E5%8E%9F%E6%96%87-5', bilingual: 'http://tprd-outline.dameng.com/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E5%8F%8C%E8%AF%AD%E7%BF%BB%E8%AF%91-5' },
+  { original: 'http://tprd-outline.dameng.com/s/3848921f-db1a-4094-a568-cdf305b887a1/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E5%8F%8C%E8%AF%AD%E7%BF%BB%E8%AF%91', bilingual: 'http://tprd-outline.dameng.com/s/3848921f-db1a-4094-a568-cdf305b887a1/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E5%8F%8C%E8%AF%AD%E7%BF%BB%E8%AF%91' },
+  { original: 'http://tprd-outline.dameng.com/s/3848921f-db1a-4094-a568-cdf305b887a1/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E8%AE%BA%E6%96%87%E5%8E%9F%E6%96%87-1', bilingual: 'http://tprd-outline.dameng.com/s/3848921f-db1a-4094-a568-cdf305b887a1/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E5%8F%8C%E8%AF%AD%E7%BF%BB%E8%AF%91-1' },
+  { original: 'http://tprd-outline.dameng.com/s/3848921f-db1a-4094-a568-cdf305b887a1/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E8%AE%BA%E6%96%87%E5%8E%9F%E6%96%87-2', bilingual: 'http://tprd-outline.dameng.com/s/3848921f-db1a-4094-a568-cdf305b887a1/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E5%8F%8C%E8%AF%AD%E7%BF%BB%E8%AF%91-2' },
+  { original: 'http://tprd-outline.dameng.com/s/3848921f-db1a-4094-a568-cdf305b887a1/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E8%AE%BA%E6%96%87%E5%8E%9F%E6%96%87-3', bilingual: 'http://tprd-outline.dameng.com/s/3848921f-db1a-4094-a568-cdf305b887a1/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E5%8F%8C%E8%AF%AD%E7%BF%BB%E8%AF%91-3' },
+  { original: 'http://tprd-outline.dameng.com/s/3848921f-db1a-4094-a568-cdf305b887a1/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E8%AE%BA%E6%96%87%E5%8E%9F%E6%96%87-4', bilingual: 'http://tprd-outline.dameng.com/s/3848921f-db1a-4094-a568-cdf305b887a1/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E5%8F%8C%E8%AF%AD%E7%BF%BB%E8%AF%91-4' },
+  { original: 'http://tprd-outline.dameng.com/s/3848921f-db1a-4094-a568-cdf305b887a1/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E8%AE%BA%E6%96%87%E5%8E%9F%E6%96%87-5', bilingual: 'http://tprd-outline.dameng.com/s/3848921f-db1a-4094-a568-cdf305b887a1/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E5%8F%8C%E8%AF%AD%E7%BF%BB%E8%AF%91-5' },
 ];
 
 function MD({ children }: { children: string }) {
@@ -162,7 +162,7 @@ export default function App() {
     { id: slugify('1.1 核心直觉：什么是 Yannakakis 路线？'), label: '1.1 核心直觉：什么是 Yannakakis 路线？', isSub: true },
     { id: slugify('1.2 回答时代裂缝：为什么它在现代系统中需要被重构？'), label: '1.2 回答时代裂缝：为什么它在现代系统中需要被重构？', isSub: true },
     { id: slugify('1.3 本期专刊导读'), label: '1.3 本期专刊导读', isSub: true },
-    
+
     { id: 'part2', label: '二、论文精读', icon: Target },
     { id: 'part2_1', label: '2.1 各篇作者与团队关系图谱', isSub: true },
     ...paperDeepDives.map((p, i) => ({ id: slugify(p.title), label: `2.${i + 2} ${p.title}`, isSub: true })),
@@ -253,11 +253,11 @@ export default function App() {
           >
             <div className="p-8 hidden lg:block border-b border-slate-100 flex-shrink-0">
               <h1 className="text-2xl font-serif font-black tracking-widest text-slate-900 leading-tight">
-                Yannakakis<br/>
+                Yannakakis<br />
                 <span className="text-blue-700 text-lg tracking-normal font-sans font-bold">技术专刊</span>
               </h1>
             </div>
-            
+
             <div className="px-4 py-6 overflow-y-auto overflow-x-hidden custom-scrollbar flex-1">
               <ul className="space-y-1">
                 {navItems.map((item) => {
@@ -269,8 +269,8 @@ export default function App() {
                         onClick={() => scrollTo(item.id)}
                         className={`w-full text-left px-3 py-2.5 rounded-md text-sm transition-all duration-200 flex items-center gap-3
                           ${isSub ? 'ml-6 pl-4 border-l-2 text-xs' : 'font-bold tracking-wide'}
-                          ${isActive 
-                            ? (isSub ? 'border-blue-600 text-blue-700 bg-blue-50/50 font-semibold' : 'bg-slate-900 text-white') 
+                          ${isActive
+                            ? (isSub ? 'border-blue-600 text-blue-700 bg-blue-50/50 font-semibold' : 'bg-slate-900 text-white')
                             : (isSub ? 'border-slate-200 text-slate-500 hover:border-slate-400 hover:text-slate-800' : 'text-slate-700 hover:bg-slate-100')
                           }
                         `}
@@ -294,7 +294,7 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      <main 
+      <main
         className="pt-16 lg:pt-0 transition-[margin] duration-75 ease-out"
         style={{ marginLeft: window.innerWidth >= 1024 ? sidebarWidth : 0 }}
       >
@@ -321,7 +321,7 @@ export default function App() {
         </div>
 
         <div className="max-w-4xl mx-auto px-4 sm:px-8 lg:px-12 pb-24 -mt-32 relative z-20 space-y-16">
-          
+
           <section id="preface" className="scroll-mt-24">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -427,7 +427,7 @@ export default function App() {
           </section>
 
         </div>
-        
+
         <footer className="bg-white border-t border-slate-200 py-8 text-center text-slate-500 text-sm font-sans">
           <p>Yannakakis 技术专刊 · 2026</p>
         </footer>
