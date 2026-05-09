@@ -1,115 +1,86 @@
-import React, { useMemo, useRef, useCallback } from 'react';
+import React, { useMemo, useRef, useCallback, useEffect } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { knowledgeGraphData } from '../data';
 
-// ── 调色板 ──────────────────────────────────────────────────────────────────
 const COLORS = {
-  paper:       '#3b82f6', // blue-500
-  author:      '#10b981', // emerald-500
-  institution: '#f59e0b', // amber-500
-  edge:        '#94a3b8', // slate-400
+  paper:       '#3b82f6',
+  author:      '#10b981',
+  corresponding: '#06d6a0',
+  institution: '#f59e0b',
 };
-
-const CATEGORY_NAMES = ['论文', '作者', '机构'];
+const INITIAL_ZOOM = 0.85;
 
 export const KnowledgeGraph: React.FC = () => {
-  const chartRef = useRef<any>(null);
+  const echartsRef  = useRef<ReactECharts>(null);
+  const zoomRef     = useRef(INITIAL_ZOOM);
+  const isDragging  = useRef(false);
+  const lastPos     = useRef({ x: 0, y: 0 });
 
-  // ── 数据构建 ─────────────────────────────────────────────────────────────
+  // ── 图谱数据 ─────────────────────────────────────────────────────────────
   const { nodes, links, categories } = useMemo(() => {
-    const nodes: any[] = [];
-    const links: any[] = [];
-    const addedNodes = new Set<string>();
-    const degrees: Record<string, number> = {};
+    const nodes: any[] = [], links: any[] = [];
+    const added = new Set<string>();
+    const deg: Record<string, number> = {};
+    const categories = ['论文', '作者', '机构'].map(n => ({ name: n }));
 
-    const categories = CATEGORY_NAMES.map(name => ({ name }));
-
-    // 第一遍：计算度数 & 收集边
-    knowledgeGraphData.forEach((paper: any) => {
-      paper.authors.forEach((author: any) => {
-        const pid = paper.paper_id;
-        links.push({ source: author.name, target: pid });
-        degrees[author.name] = (degrees[author.name] || 0) + 1;
-        degrees[pid]         = (degrees[pid]         || 0) + 1;
-
-        (author.institution?.split('、') ?? []).forEach((inst: string) => {
+    knowledgeGraphData.forEach((p: any) => {
+      p.authors.forEach((a: any) => {
+        links.push({ source: a.name, target: p.paper_id });
+        deg[a.name]    = (deg[a.name]    || 0) + 1;
+        deg[p.paper_id] = (deg[p.paper_id] || 0) + 1;
+        (a.institution?.split('、') ?? []).forEach((inst: string) => {
           const iid = `inst-${inst}`;
-          links.push({ source: author.name, target: iid });
-          degrees[author.name] = (degrees[author.name] || 0) + 1;
-          degrees[iid]         = (degrees[iid]         || 0) + 1;
+          links.push({ source: a.name, target: iid });
+          deg[a.name] = (deg[a.name] || 0) + 1;
+          deg[iid]    = (deg[iid]    || 0) + 1;
         });
       });
     });
 
-    // 第二遍：添加节点
-    knowledgeGraphData.forEach((paper: any) => {
-      if (!addedNodes.has(paper.paper_id)) {
-        const sz = 34 + (degrees[paper.paper_id] || 0) * 7;
-        nodes.push({
-          id: paper.paper_id,
-          name: paper.paper_id,
-          category: 0,
-          symbolSize: sz,
-          value: paper.title,
-          itemStyle: { color: COLORS.paper, shadowBlur: 12, shadowColor: 'rgba(59,130,246,0.4)' },
+    knowledgeGraphData.forEach((p: any) => {
+      if (!added.has(p.paper_id)) {
+        nodes.push({ id: p.paper_id, name: p.paper_id, category: 0,
+          symbolSize: 34 + (deg[p.paper_id] || 0) * 7, value: p.title,
+          itemStyle: { color: COLORS.paper, shadowBlur: 10, shadowColor: 'rgba(59,130,246,0.35)' },
           label: { show: true, position: 'inside', fontSize: 11, fontWeight: 'bold', color: '#fff' },
         });
-        addedNodes.add(paper.paper_id);
+        added.add(p.paper_id);
       }
-
-      paper.authors.forEach((author: any) => {
-        if (!addedNodes.has(author.name)) {
-          const sz = 18 + (degrees[author.name] || 0) * 5;
-          nodes.push({
-            id: author.name,
-            name: author.name,
-            category: 1,
-            symbolSize: sz,
-            value: author.is_corresponding ? '通讯作者' : '作者',
-            itemStyle: {
-              color: author.is_corresponding ? '#06d6a0' : COLORS.author,
-              borderWidth: author.is_corresponding ? 2.5 : 0,
-              borderColor: '#fff',
-            },
+      p.authors.forEach((a: any) => {
+        if (!added.has(a.name)) {
+          nodes.push({ id: a.name, name: a.name, category: 1,
+            symbolSize: 18 + (deg[a.name] || 0) * 5, value: a.is_corresponding ? '通讯作者' : '作者',
+            itemStyle: { color: a.is_corresponding ? COLORS.corresponding : COLORS.author,
+              borderWidth: a.is_corresponding ? 2.5 : 0, borderColor: '#fff' },
             label: { show: true, position: 'right', fontSize: 11, color: '#334155' },
           });
-          addedNodes.add(author.name);
+          added.add(a.name);
         }
-
-        (author.institution?.split('、') ?? []).forEach((inst: string) => {
+        (a.institution?.split('、') ?? []).forEach((inst: string) => {
           const iid = `inst-${inst}`;
-          if (!addedNodes.has(iid)) {
-            const sz = 22 + (degrees[iid] || 0) * 6;
-            nodes.push({
-              id: iid,
-              name: inst,
-              category: 2,
-              symbolSize: sz,
-              value: '',
-              symbol: 'roundRect',
+          if (!added.has(iid)) {
+            nodes.push({ id: iid, name: inst, category: 2, symbol: 'roundRect',
+              symbolSize: 22 + (deg[iid] || 0) * 6,
               itemStyle: { color: COLORS.institution, borderRadius: 6 },
               label: { show: true, position: 'bottom', fontSize: 11, color: '#92400e' },
             });
-            addedNodes.add(iid);
+            added.add(iid);
           }
         });
       });
     });
-
     return { nodes, links, categories };
   }, []);
 
-  // ── ECharts option ────────────────────────────────────────────────────────
   const option = useMemo(() => ({
     backgroundColor: 'transparent',
     tooltip: {
-      backgroundColor: 'rgba(15,23,42,0.88)',
-      borderColor: '#334155',
-      borderWidth: 1,
-      textStyle: { color: '#f1f5f9', fontSize: 13, fontFamily: 'sans-serif' },
+      backgroundColor: 'rgba(15,23,42,0.9)',
+      borderColor: '#334155', borderWidth: 1,
+      textStyle: { color: '#f1f5f9', fontSize: 13 },
       formatter: (params: any) => {
         if (params.dataType !== 'node') return '';
-        const cat = CATEGORY_NAMES[params.data.category];
+        const cat = ['论文', '作者', '机构'][params.data.category];
         const sub = params.data.value ? `<br/><span style="color:#94a3b8">${params.data.value}</span>` : '';
         return `<b>${params.data.name}</b>${sub}<br/><span style="color:#64748b;font-size:11px">${cat}</span>`;
       },
@@ -117,69 +88,77 @@ export const KnowledgeGraph: React.FC = () => {
     animationDuration: 1800,
     animationEasingUpdate: 'quinticInOut',
     series: [{
-      name: 'Knowledge Graph',
-      type: 'graph',
-      layout: 'force',
-      data: nodes,
-      links: links,
-      categories,
-      // roam: true 允许滚轮缩放 + 拖拽平移
-      roam: true,
-      // 初始缩放：让所有节点都可见
-      zoom: 0.85,
-      label: {
-        show: true,
-        position: 'right',
-        formatter: '{b}',
-        fontSize: 11,
-        fontFamily: 'sans-serif',
-        color: '#334155',
-      },
-      edgeSymbol: ['none', 'arrow'],
-      edgeSymbolSize: [0, 7],
-      lineStyle: {
-        color: COLORS.edge,
-        width: 1.2,
-        curveness: 0.2,
-        opacity: 0.6,
-      },
-      emphasis: {
-        focus: 'adjacency',        // hover 节点时高亮邻居
-        lineStyle: { width: 2.5, opacity: 1 },
-        label: { fontWeight: 'bold' },
-      },
-      force: {
-        repulsion: 1400,          // 增大斥力，避免节点重叠
-        edgeLength: [80, 240],    // 边长范围
-        gravity: 0.08,            // 较小重力，让节点分散
-        friction: 0.6,
-        layoutAnimation: true,
-      },
+      name: 'kg', type: 'graph', layout: 'force',
+      data: nodes, links, categories,
+      roam: true, zoom: INITIAL_ZOOM,
+      label: { show: true, position: 'right', formatter: '{b}', fontSize: 11, color: '#334155' },
+      edgeSymbol: ['none', 'arrow'], edgeSymbolSize: [0, 7],
+      lineStyle: { color: '#94a3b8', width: 1.2, curveness: 0.2, opacity: 0.55 },
+      emphasis: { focus: 'adjacency', lineStyle: { width: 2.5, opacity: 1 }, label: { fontWeight: 'bold' } },
+      force: { repulsion: 1400, edgeLength: [80, 240], gravity: 0.08, friction: 0.6, layoutAnimation: true },
     }],
   }), [nodes, links, categories]);
 
-  // ── 控制按钮回调 ──────────────────────────────────────────────────────────
-  const getChart = useCallback(() => chartRef.current?.getEchartsInstance(), []);
-
-  const handleZoomIn = useCallback(() => {
-    const chart = getChart();
-    if (!chart) return;
-    chart.dispatchAction({ type: 'graphRoam', zoom: 1.25 });
-  }, [getChart]);
-
-  const handleZoomOut = useCallback(() => {
-    const chart = getChart();
-    if (!chart) return;
-    chart.dispatchAction({ type: 'graphRoam', zoom: 0.8 });
-  }, [getChart]);
+  // ── 缩放按钮：用 setOption 跟踪 zoom，稳定可靠 ──────────────────────────
+  const applyZoom = useCallback((factor: number) => {
+    const inst = echartsRef.current?.getEchartsInstance();
+    if (!inst) return;
+    zoomRef.current = Math.max(0.1, Math.min(8, zoomRef.current * factor));
+    inst.setOption({ series: [{ zoom: zoomRef.current }] });
+  }, []);
 
   const handleReset = useCallback(() => {
-    const chart = getChart();
-    if (!chart) return;
-    // 重置到初始视野
-    chart.dispatchAction({ type: 'graphRoam', zoom: 0.85 });
-    chart.dispatchAction({ type: 'restore' });
-  }, [getChart]);
+    const inst = echartsRef.current?.getEchartsInstance();
+    if (!inst) return;
+    zoomRef.current = INITIAL_ZOOM;
+    inst.setOption({ series: [{ zoom: INITIAL_ZOOM }] });
+  }, []);
+
+  // ── 全区域拖拽：监听 canvas 原生事件，转为 ECharts graphRoam ────────────
+  useEffect(() => {
+    // 等 chart 初始化完成后获取 canvas DOM
+    const timer = setTimeout(() => {
+      const inst = echartsRef.current?.getEchartsInstance();
+      if (!inst) return;
+      // @ts-ignore – getZr() 是 ECharts 内部 API，稳定可用
+      const zr = inst.getZr();
+      const dom = (zr as any).painter?.getViewportRoot?.() as HTMLElement | undefined;
+      const canvas = dom ?? (inst.getDom()?.querySelector('canvas') as HTMLElement | undefined);
+      if (!canvas) return;
+
+      const onDown = (e: MouseEvent) => {
+        isDragging.current = true;
+        lastPos.current = { x: e.clientX, y: e.clientY };
+        canvas.style.cursor = 'grabbing';
+        e.preventDefault();
+      };
+      const onMove = (e: MouseEvent) => {
+        if (!isDragging.current) return;
+        const dx = e.clientX - lastPos.current.x;
+        const dy = e.clientY - lastPos.current.y;
+        lastPos.current = { x: e.clientX, y: e.clientY };
+        inst.dispatchAction({ type: 'graphRoam', seriesIndex: 0, dx, dy });
+        e.preventDefault();
+      };
+      const onUp = () => {
+        isDragging.current = false;
+        canvas.style.cursor = 'grab';
+      };
+
+      canvas.addEventListener('mousedown', onDown);
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup',   onUp);
+      canvas.style.cursor = 'grab';
+
+      return () => {
+        canvas.removeEventListener('mousedown', onDown);
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup',   onUp);
+      };
+    }, 800); // force layout 稳定后再绑定
+
+    return () => clearTimeout(timer);
+  }, []);
 
   // ── 渲染 ─────────────────────────────────────────────────────────────────
   return (
@@ -187,52 +166,39 @@ export const KnowledgeGraph: React.FC = () => {
       {/* 工具栏 */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 bg-slate-50">
         <span className="text-xs text-slate-500 font-sans select-none">
-          滚轮缩放 · 拖拽平移 · 点击节点高亮邻居
+          拖拽平移 · 滚轮缩放 · 点击节点高亮邻居
         </span>
         <div className="flex items-center gap-1.5">
-          {[
-            { label: '＋', title: '放大', onClick: handleZoomIn },
-            { label: '－', title: '缩小', onClick: handleZoomOut },
-            { label: '⊙', title: '恢复默认', onClick: handleReset },
-          ].map(({ label, title, onClick }) => (
-            <button
-              key={title}
-              title={title}
-              onClick={onClick}
-              className="w-7 h-7 rounded border border-slate-200 bg-white text-slate-600 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 text-base leading-none flex items-center justify-center transition-colors font-sans shadow-sm"
-            >
+          {([['＋','放大',() => applyZoom(1.3)],['－','缩小',() => applyZoom(1/1.3)],['⊙','恢复默认',handleReset]] as const).map(([label, title, onClick]) => (
+            <button key={title} title={title} onClick={onClick}
+              className="w-7 h-7 rounded border border-slate-200 bg-white text-slate-600 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 text-base leading-none flex items-center justify-center transition-colors font-sans shadow-sm select-none">
               {label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* 图谱主体 */}
-      <div className="h-[640px] p-2">
-        <ReactECharts
-          ref={chartRef}
-          option={option}
+      {/* 图谱 */}
+      <div className="h-[640px]">
+        <ReactECharts ref={echartsRef} option={option}
           style={{ height: '100%', width: '100%' }}
-          opts={{ renderer: 'canvas' }}  // canvas renderer 拖拽体验更流畅
-        />
+          opts={{ renderer: 'canvas' }} />
       </div>
 
-      {/* 底部说明 */}
+      {/* 图例 */}
       <div className="px-4 py-2 border-t border-slate-100 bg-slate-50 flex items-center gap-4 flex-wrap">
-        {[
-          { color: COLORS.paper,       label: '论文节点' },
-          { color: COLORS.author,      label: '作者节点' },
-          { color: '#06d6a0',          label: '通讯作者' },
-          { color: COLORS.institution, label: '机构节点' },
-        ].map(({ color, label }) => (
+        {([
+          [COLORS.paper,        '论文节点'],
+          [COLORS.author,       '作者节点'],
+          [COLORS.corresponding,'通讯作者'],
+          [COLORS.institution,  '机构节点'],
+        ] as const).map(([color, label]) => (
           <span key={label} className="flex items-center gap-1.5 text-xs text-slate-500 font-sans">
             <span className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color }} />
             {label}
           </span>
         ))}
-        <span className="ml-auto text-xs text-slate-400 font-sans">
-          节点大小 = 连接数（度中心性）
-        </span>
+        <span className="ml-auto text-xs text-slate-400 font-sans">节点大小 = 连接数（度中心性）</span>
       </div>
     </div>
   );
