@@ -1,0 +1,28 @@
+-- 开始导入维度表 (Dimension Tables)
+COPY dbgen_version FROM '/home/dmpr/RPT/datasets/DSGen-software-code-4.0.0/data_sf_10/dbgen_version.dat' (DELIMITER '|');
+COPY customer_address FROM '/home/dmpr/RPT/datasets/DSGen-software-code-4.0.0/data_sf_10/customer_address.dat' (DELIMITER '|');
+COPY customer_demographics FROM '/home/dmpr/RPT/datasets/DSGen-software-code-4.0.0/data_sf_10/customer_demographics.dat' (DELIMITER '|');
+COPY date_dim FROM '/home/dmpr/RPT/datasets/DSGen-software-code-4.0.0/data_sf_10/date_dim.dat' (DELIMITER '|');
+COPY warehouse FROM '/home/dmpr/RPT/datasets/DSGen-software-code-4.0.0/data_sf_10/warehouse.dat' (DELIMITER '|');
+COPY ship_mode FROM '/home/dmpr/RPT/datasets/DSGen-software-code-4.0.0/data_sf_10/ship_mode.dat' (DELIMITER '|');
+COPY time_dim FROM '/home/dmpr/RPT/datasets/DSGen-software-code-4.0.0/data_sf_10/time_dim.dat' (DELIMITER '|');
+COPY reason FROM '/home/dmpr/RPT/datasets/DSGen-software-code-4.0.0/data_sf_10/reason.dat' (DELIMITER '|');
+COPY income_band FROM '/home/dmpr/RPT/datasets/DSGen-software-code-4.0.0/data_sf_10/income_band.dat' (DELIMITER '|');
+COPY item FROM '/home/dmpr/RPT/datasets/DSGen-software-code-4.0.0/data_sf_10/item.dat' (DELIMITER '|');
+COPY store FROM '/home/dmpr/RPT/datasets/DSGen-software-code-4.0.0/data_sf_10/store.dat' (DELIMITER '|');
+COPY call_center FROM '/home/dmpr/RPT/datasets/DSGen-software-code-4.0.0/data_sf_10/call_center.dat' (DELIMITER '|');
+COPY customer FROM '/home/dmpr/RPT/datasets/DSGen-software-code-4.0.0/data_sf_10/customer.dat' (DELIMITER '|');
+COPY web_site FROM '/home/dmpr/RPT/datasets/DSGen-software-code-4.0.0/data_sf_10/web_site.dat' (DELIMITER '|');
+COPY household_demographics FROM '/home/dmpr/RPT/datasets/DSGen-software-code-4.0.0/data_sf_10/household_demographics.dat' (DELIMITER '|');
+COPY web_page FROM '/home/dmpr/RPT/datasets/DSGen-software-code-4.0.0/data_sf_10/web_page.dat' (DELIMITER '|');
+COPY promotion FROM '/home/dmpr/RPT/datasets/DSGen-software-code-4.0.0/data_sf_10/promotion.dat' (DELIMITER '|');
+COPY catalog_page FROM '/home/dmpr/RPT/datasets/DSGen-software-code-4.0.0/data_sf_10/catalog_page.dat' (DELIMITER '|');
+
+-- 开始导入事实表 (Fact Tables)
+COPY inventory FROM '/home/dmpr/RPT/datasets/DSGen-software-code-4.0.0/data_sf_10/inventory.dat' (DELIMITER '|');
+COPY store_returns FROM '/home/dmpr/RPT/datasets/DSGen-software-code-4.0.0/data_sf_10/store_returns.dat' (DELIMITER '|');
+COPY catalog_returns FROM '/home/dmpr/RPT/datasets/DSGen-software-code-4.0.0/data_sf_10/catalog_returns.dat' (DELIMITER '|');
+COPY web_returns FROM '/home/dmpr/RPT/datasets/DSGen-software-code-4.0.0/data_sf_10/web_returns.dat' (DELIMITER '|');
+COPY web_sales FROM '/home/dmpr/RPT/datasets/DSGen-software-code-4.0.0/data_sf_10/web_sales.dat' (DELIMITER '|');
+COPY catalog_sales FROM '/home/dmpr/RPT/datasets/DSGen-software-code-4.0.0/data_sf_10/catalog_sales.dat' (DELIMITER '|');
+COPY store_sales FROM '/home/dmpr/RPT/datasets/DSGen-software-code-4.0.0/data_sf_10/store_sales.dat' (DELIMITER '|');
