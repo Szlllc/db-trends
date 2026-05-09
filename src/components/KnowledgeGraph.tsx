@@ -114,14 +114,6 @@ export const KnowledgeGraph: React.FC = () => {
         return `<b>${params.data.name}</b>${sub}<br/><span style="color:#64748b;font-size:11px">${cat}</span>`;
       },
     },
-    legend: [{
-      data: CATEGORY_NAMES,
-      bottom: 12,
-      itemWidth: 12,
-      itemHeight: 12,
-      textStyle: { color: '#475569', fontSize: 12, fontFamily: 'sans-serif' },
-      icon: 'circle',
-    }],
     animationDuration: 1800,
     animationEasingUpdate: 'quinticInOut',
     series: [{
@@ -135,7 +127,6 @@ export const KnowledgeGraph: React.FC = () => {
       roam: true,
       // 初始缩放：让所有节点都可见
       zoom: 0.85,
-      center: ['50%', '50%'],
       label: {
         show: true,
         position: 'right',
@@ -222,7 +213,7 @@ export const KnowledgeGraph: React.FC = () => {
           ref={chartRef}
           option={option}
           style={{ height: '100%', width: '100%' }}
-          opts={{ renderer: 'svg' }}  // SVG renderer 文字更清晰
+          opts={{ renderer: 'canvas' }}  // canvas renderer 拖拽体验更流畅
         />
       </div>
 
