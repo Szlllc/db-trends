@@ -1,15 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mermaid from 'mermaid';
 
-// 等比放大 SVG 尺寸，不改变字号
+// 整体视觉缩放倍率（不改变字号配置，只改变渲染尺寸）
 const SCALE = 1.6;
-
-function scaleSvgDimensions(svgString: string, factor: number): string {
-  // 只处理数值型的 width / height（跳过 "100%" 等百分比）
-  return svgString
-    .replace(/(\swidth=")(\d+(?:\.\d+)?)(")/,  (_, a, w, b) => `${a}${parseFloat(w) * factor}${b}`)
-    .replace(/(\sheight=")(\d+(?:\.\d+)?)(")/,  (_, a, h, b) => `${a}${parseFloat(h) * factor}${b}`);
-}
 
 export const MermaidWrapper: React.FC<{ chart: string }> = ({ chart }) => {
   const [svg, setSvg] = useState<string>('');
@@ -21,17 +14,16 @@ export const MermaidWrapper: React.FC<{ chart: string }> = ({ chart }) => {
       theme: 'default',
       securityLevel: 'loose',
       fontSize: 16,
-      flowchart: { useMaxWidth: true, htmlLabels: true },
-      sequence:  { useMaxWidth: true },
+      // useMaxWidth: false → mermaid 输出固定像素宽高，便于 zoom 生效
+      flowchart: { useMaxWidth: false, htmlLabels: true },
+      sequence:  { useMaxWidth: false },
     });
 
     let isMounted = true;
     const renderChart = async () => {
       try {
         const { svg: renderedSvg } = await mermaid.render(id.current, chart);
-        if (isMounted) {
-          setSvg(scaleSvgDimensions(renderedSvg, SCALE));
-        }
+        if (isMounted) setSvg(renderedSvg);
       } catch (err) {
         console.error('Mermaid render error', err);
       }
@@ -44,7 +36,11 @@ export const MermaidWrapper: React.FC<{ chart: string }> = ({ chart }) => {
   return (
     <div className="flex justify-center my-6 overflow-x-auto bg-white p-4 border border-slate-200 rounded-sm shadow-sm">
       {svg ? (
-        <div dangerouslySetInnerHTML={{ __html: svg }} />
+        // zoom 属性会对整个 SVG 做等比视觉放大，同时保留正确的布局空间
+        <div
+          dangerouslySetInnerHTML={{ __html: svg }}
+          style={{ zoom: SCALE, display: 'flex', justifyContent: 'center' }}
+        />
       ) : (
         <div className="text-slate-400 font-mono text-sm">Rendering Diagram...</div>
       )}
