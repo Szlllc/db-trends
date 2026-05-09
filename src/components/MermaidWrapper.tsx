@@ -10,6 +10,9 @@ export const MermaidWrapper: React.FC<{ chart: string }> = ({ chart }) => {
       startOnLoad: false,
       theme: 'default',
       securityLevel: 'loose',
+      fontSize: 16,
+      flowchart: { useMaxWidth: true, htmlLabels: true },
+      sequence:  { useMaxWidth: true },
     });
     
     let isMounted = true;

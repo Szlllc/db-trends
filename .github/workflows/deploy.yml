@@ -37,6 +37,12 @@ jobs:
         # vite.config.ts 中已设置 base: '/db-trends/202604/'
         # 所以 index.html 内的资源引用都带有此前缀
 
+      - name: Copy figures into dist
+        run: |
+          # figures/ 目录不在 public/ 下，Vite 不会自动打包
+          # 手动复制到 dist/ 使图片在部署后可以访问
+          cp -r figures dist/figures
+
       - name: Prepare Pages directory structure
         run: |
           # 将 dist/ 内容放入 dist-pages/202604/
