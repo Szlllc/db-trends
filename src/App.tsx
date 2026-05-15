@@ -20,6 +20,7 @@ const {
   sec2_1Description,
   paperDeepDives,
   literatureEvolution,
+  ch4Intro,
   algorithmReproduction,
   referencesData,
   glossaryData,
@@ -69,8 +70,17 @@ const MarkdownComponents: any = {
   p: ({ children }: any) => {
     const isText = typeof children === 'string' || (Array.isArray(children) && children.length === 1 && typeof children[0] === 'string');
     const text = isText ? (Array.isArray(children) ? children[0] : children) : '';
-    // 识别「图/表 X.Y」或「图/表 X-Y」格式的题注，渲染为居中小字
-    if (typeof text === 'string' && /^(图|表)\s*\d+[.\-]\d+/.test(text) && text.length < 160) {
+    // 识别独立题注「图/表 X.Y <名词短语>」，与正文中的「表3.1给出了…」引用区分：
+    //   1. 不以句号/叹号/问号结尾（排除作为句子主语的正文引用）
+    //   2. 数字后不紧跟常见谓语动词（给/展/列/描/显/说/反/提/记/汇/所示）
+    //   3. 长度合理（题注通常 ≤ 80 字）
+    const isCaption =
+      typeof text === 'string' &&
+      /^(图|表)\s*\d+[.\-]\d+/.test(text) &&
+      text.length < 80 &&
+      !/[。！？]$/.test(text.trim()) &&
+      !/\d+[.\-]\d+\s*(给|展|列|描|显|说|反|提|记|汇|所示|表示|表明)/.test(text);
+    if (isCaption) {
       return <p className="text-center text-sm text-slate-500 mt-2 mb-8 font-serif italic">{children}</p>;
     }
     return <p className="text-slate-700 leading-relaxed mb-6 font-serif text-justify text-[1.05rem] break-words">{children}</p>
@@ -452,6 +462,12 @@ export default function App() {
 
           <section id="part4" className="scroll-mt-24">
             <motion.div {...MOTION_PROPS} className={`${CARD_CLASS} space-y-0`}>
+              {ch4Intro && (
+                <>
+                  <MD>{ch4Intro}</MD>
+                  <div className="my-10 w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+                </>
+              )}
               {Object.entries(algorithmReproduction)
                 .sort(([a], [b]) => a.localeCompare(b))
                 .map(([key, section], i, arr) => (

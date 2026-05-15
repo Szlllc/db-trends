@@ -49,6 +49,7 @@ export interface MdData {
   sec2_1Description: string;
   paperDeepDives: PaperDeepDive[];
   literatureEvolution: string;
+  ch4Intro: string;
   algorithmReproduction: Record<string, string>;
   referencesData: string;
   glossaryData: string;
@@ -254,6 +255,19 @@ export function parseMd(rawContent: string): MdData {
 
   // 7. 解析第四章：实验复现（按 ## 4.x 子节分割）
   const ch4Content = sectionMap['algorithmRepro'] ?? '';
+
+  // 提取第四章"前言"：H1 标题 + 第一个 ## 4.x 之前的导语内容（blockquote 等）
+  const ch4Intro = (() => {
+    const lines = ch4Content.split('\n');
+    const annotated = annotateCodeBlocks(lines);
+    const intro: string[] = [];
+    for (const { line, isInCodeBlock } of annotated) {
+      if (!isInCodeBlock && line.startsWith('## ')) break;
+      intro.push(line);
+    }
+    return intro.join('\n').trim();
+  })();
+
   const ch4H2Sections = splitByHeading(ch4Content, 2, 1);
 
   const algorithmReproduction: Record<string, string> = {};
@@ -287,6 +301,7 @@ export function parseMd(rawContent: string): MdData {
     sec2_1Description,
     paperDeepDives,
     literatureEvolution,
+    ch4Intro,
     algorithmReproduction,
     referencesData,
     glossaryData,
