@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { BookOpen, Zap, Target, GitMerge, FileCode, Menu, X } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { BookOpen, Target, GitMerge, FileCode, Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -7,9 +7,24 @@ import remarkBreaks from 'remark-breaks';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
-import { prefaceData, introductionData, paperDeepDives, literatureEvolution, algorithmReproduction, referencesData, glossaryData } from './data';
+import mdData from 'virtual:md-data';
+import type { NavItem } from '../vite-plugin-md-data';
 import { KnowledgeGraph } from './components/KnowledgeGraph';
 import { MermaidWrapper } from './components/MermaidWrapper';
+
+// 从虚拟模块解构数据（每次构建/HMR 时自动从 MD 文档重新解析）
+const {
+  prefaceData,
+  introductionData,
+  sec2_1Title,
+  sec2_1Description,
+  paperDeepDives,
+  literatureEvolution,
+  algorithmReproduction,
+  referencesData,
+  glossaryData,
+  navItems: mdNavItems,
+} = mdData;
 
 export function slugify(text: string) {
   if (!text) return '';
@@ -53,9 +68,10 @@ const MarkdownComponents: any = {
   ),
   p: ({ children }: any) => {
     const isText = typeof children === 'string' || (Array.isArray(children) && children.length === 1 && typeof children[0] === 'string');
-    const text = isText ? children : '';
-    if (typeof text === 'string' && /^(图|表)\s*\d+-\d+(-\d+)?\s+.+/.test(text) && text.length < 100) {
-      return <p className="text-center text-sm text-slate-500 mt-2 mb-8 font-serif">{children}</p>;
+    const text = isText ? (Array.isArray(children) ? children[0] : children) : '';
+    // 识别「图/表 X.Y」或「图/表 X-Y」格式的题注，渲染为居中小字
+    if (typeof text === 'string' && /^(图|表)\s*\d+[.\-]\d+/.test(text) && text.length < 160) {
+      return <p className="text-center text-sm text-slate-500 mt-2 mb-8 font-serif italic">{children}</p>;
     }
     return <p className="text-slate-700 leading-relaxed mb-6 font-serif text-justify text-[1.05rem] break-words">{children}</p>
   },
@@ -123,13 +139,18 @@ const MarkdownComponents: any = {
   tr: ({ children }: any) => <tr className="hover:bg-blue-50/30 transition-colors">{children}</tr>,
   th: ({ children }: any) => <th className="px-6 py-4 font-bold text-[#1a233a] whitespace-nowrap">{children}</th>,
   td: ({ children }: any) => <td className="px-6 py-4 text-slate-700 leading-relaxed">{children}</td>,
+  // 分割线（---）不渲染，避免章节间出现多余横线
+  hr: () => null,
 };
 
 // ─── Shared helpers ────────────────────────────────────────────────────────────
 const CARD_CLASS = "bg-white p-8 sm:p-12 lg:p-16 rounded-sm shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-100";
 const MOTION_PROPS = { initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true as const } };
 
-// 各篇论文的原文与双语翻译链接（顺序与 paperDeepDives 一致）
+// 各篇论文的原文与双语翻译链接
+// 如需在 MD 中管理这些链接，可在每个 ## 2.x 章节开头添加：
+// <!-- paper-links: {"original":"url1","bilingual":"url2"} -->
+// 当前保留此处作为后备（按论文顺序对应）
 const PAPER_LINKS = [
   { original: 'http://tprd-outline.dameng.com/s/3848921f-db1a-4094-a568-cdf305b887a1/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E5%8F%8C%E8%AF%AD%E7%BF%BB%E8%AF%91', bilingual: 'http://tprd-outline.dameng.com/s/3848921f-db1a-4094-a568-cdf305b887a1/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E5%8F%8C%E8%AF%AD%E7%BF%BB%E8%AF%91' },
   { original: 'http://tprd-outline.dameng.com/s/3848921f-db1a-4094-a568-cdf305b887a1/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E8%AE%BA%E6%96%87%E5%8E%9F%E6%96%87-1', bilingual: 'http://tprd-outline.dameng.com/s/3848921f-db1a-4094-a568-cdf305b887a1/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E5%8F%8C%E8%AF%AD%E7%BF%BB%E8%AF%91-1' },
@@ -138,6 +159,11 @@ const PAPER_LINKS = [
   { original: 'http://tprd-outline.dameng.com/s/3848921f-db1a-4094-a568-cdf305b887a1/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E8%AE%BA%E6%96%87%E5%8E%9F%E6%96%87-4', bilingual: 'http://tprd-outline.dameng.com/s/3848921f-db1a-4094-a568-cdf305b887a1/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E5%8F%8C%E8%AF%AD%E7%BF%BB%E8%AF%91-4' },
   { original: 'http://tprd-outline.dameng.com/s/3848921f-db1a-4094-a568-cdf305b887a1/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E8%AE%BA%E6%96%87%E5%8E%9F%E6%96%87-5', bilingual: 'http://tprd-outline.dameng.com/s/3848921f-db1a-4094-a568-cdf305b887a1/doc/6lwe5paz5rgh5oc7-BhyOkgCLK1#h-%E5%8F%8C%E8%AF%AD%E7%BF%BB%E8%AF%91-5' },
 ];
+
+// 图标映射：将插件导出的图标名称字符串映射为 Lucide 组件
+const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
+  BookOpen, Target, GitMerge, FileCode,
+};
 
 function MD({ children }: { children: string }) {
   return (
@@ -154,37 +180,11 @@ export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(288);
   const [isResizing, setIsResizing] = useState(false);
-  const sidebarRef    = useRef<HTMLDivElement>(null);
-  const navScrollRef  = useRef<HTMLDivElement>(null); // 侧边栏滚动容器
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const navScrollRef = useRef<HTMLDivElement>(null);
 
-  const navItems = useMemo(() => [
-    { id: 'preface', label: '卷首语', icon: BookOpen },
-    { id: 'introduction', label: '一、导语', icon: BookOpen },
-    { id: slugify('1.1 核心直觉：什么是 Yannakakis 路线？'), label: '1.1 核心直觉：什么是 Yannakakis 路线？', isSub: true },
-    { id: slugify('1.2 回答时代裂缝：为什么它在现代系统中需要被重构？'), label: '1.2 回答时代裂缝：为什么它在现代系统中需要被重构？', isSub: true },
-    { id: slugify('1.3 本期专刊导读'), label: '1.3 本期专刊导读', isSub: true },
-
-    { id: 'part2', label: '二、论文精读', icon: Target },
-    { id: 'part2_1', label: '2.1 各篇作者与团队关系图谱', isSub: true },
-    ...paperDeepDives.map((p, i) => ({ id: slugify(p.title), label: `2.${i + 2} ${p.title}`, isSub: true })),
-
-    { id: 'part3', label: '三、文献关系的主线', icon: GitMerge },
-    { id: slugify('3.1 让"树上规约"的保证能落地：计划形态、接口与隐藏常数'), label: '3.1 让"树上规约"的保证能落地', isSub: true },
-    { id: slugify('3.2 把规约做便宜：近似过滤如何交换掉常数与保证'), label: '3.2 把规约做便宜', isSub: true },
-    { id: slugify('3.3 让"过滤"进入优化器—执行器主干：成本化与信息流'), label: '3.3 让"过滤"进入主干', isSub: true },
-    { id: slugify('3.4 把"规约屏障"拆成流水线：执行模型如何复权吞吐'), label: '3.4 把"规约屏障"拆成流水线', isSub: true },
-    { id: slugify('3.5 同一张账单如何被分期支付'), label: '3.5 同一张账单如何分期支付', isSub: true },
-
-    { id: 'part4', label: '四、实验复现', icon: FileCode },
-    { id: slugify('4.1 RPT 复现方法'), label: '4.1 RPT 复现方法', isSub: true },
-    { id: slugify('4.2 Quorion(Y+) 复现方法'), label: '4.2 Quorion(Y+) 复现方法', isSub: true },
-    { id: slugify('4.3 RPT核心算法执行流程'), label: '4.3 RPT核心算法执行流程', isSub: true },
-    { id: slugify('4.4 Y+核心算法执行流程'), label: '4.4 Y+核心算法执行流程', isSub: true },
-    { id: slugify('4.5 问题记录'), label: '4.5 问题记录', isSub: true },
-
-    { id: 'part5', label: '五、参考文献', icon: BookOpen },
-    { id: 'part6', label: '六、术语索引', icon: BookOpen },
-  ], []);
+  // navItems 直接来自 MD 解析结果，无需硬编码
+  const navItems: NavItem[] = mdNavItems;
 
   // ── 导航高亮：用 IntersectionObserver 追踪哪个 section 最靠近视口顶部 ──
   useEffect(() => {
@@ -238,8 +238,8 @@ export default function App() {
   }, [navItems]);
 
 
-  const startResizing = useCallback(() => setIsResizing(true), []);
-  const stopResizing = useCallback(() => setIsResizing(false), []);
+  const startResizing = () => setIsResizing(true);
+  const stopResizing = () => setIsResizing(false);
   const resize = useCallback((e: MouseEvent) => {
     if (isResizing && e.clientX >= 240 && e.clientX <= 480) {
       setSidebarWidth(e.clientX);
@@ -262,8 +262,8 @@ export default function App() {
     const container = navScrollRef.current;
     const btnTop = btn.offsetTop;
     const btnBot = btnTop + btn.offsetHeight;
-    const cTop   = container.scrollTop;
-    const cBot   = cTop + container.clientHeight;
+    const cTop = container.scrollTop;
+    const cBot = cTop + container.clientHeight;
     if (btnTop < cTop + 56) {
       container.scrollTo({ top: Math.max(0, btnTop - 56), behavior: 'smooth' });
     } else if (btnBot > cBot - 56) {
@@ -325,7 +325,12 @@ export default function App() {
                           }
                         `}
                       >
-                        {!isSub && item.icon && <item.icon size={16} className={isActive ? 'text-blue-400' : 'text-slate-400'} />}
+                        {!isSub && item.icon && (() => {
+                          const IconComp = ICON_MAP[item.icon!];
+                          return IconComp
+                            ? <IconComp size={16} className={isActive ? 'text-blue-400' : 'text-slate-400'} />
+                            : null;
+                        })()}
                         <span className="truncate">{item.label}</span>
                       </button>
                     </li>
@@ -365,7 +370,7 @@ export default function App() {
             </h1>
             <div className="w-24 h-1 bg-blue-500 mx-auto mt-6 mb-8"></div>
             <p className="text-3xl text-slate-300 font-light tracking-wide font-sans">
-              四十年理论遗珠与现代数据库的相撞
+              神级算法与现代数据库的再相遇
             </p>
           </div>
         </div>
@@ -378,10 +383,8 @@ export default function App() {
               animate={{ opacity: 1, y: 0 }}
               className={CARD_CLASS}
             >
-              <div className="markdown-body preface-content">
-                <Markdown components={MarkdownComponents} remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]} rehypePlugins={[rehypeKatex]}>
-                  {prefaceData}
-                </Markdown>
+              <div className="preface-content">
+                <MD>{prefaceData}</MD>
               </div>
               <div id="introduction" className="my-10 w-full h-px bg-slate-200 scroll-mt-24" />
               <MD>{introductionData}</MD>
@@ -392,7 +395,6 @@ export default function App() {
             <div className="space-y-16">
               <section id="part2_1" className="scroll-mt-24">
                 <div className={CARD_CLASS}>
-                  {/* 章节标题在白底卡片内 */}
                   <div className="flex justify-center mb-12">
                     <div className="inline-flex flex-col items-center justify-center text-center">
                       <h1 className="text-3xl md:text-4xl font-serif font-black tracking-widest text-[#1a233a]">二、论文精读</h1>
@@ -400,11 +402,13 @@ export default function App() {
                     </div>
                   </div>
                   <div className="mb-8 border-b border-slate-200 pb-3">
-                    <h2 className="text-2xl md:text-3xl font-serif font-bold text-slate-900 border-l-4 border-blue-600 pl-4">2.1 作者与团队图谱</h2>
+                    <h2 className="text-2xl md:text-3xl font-serif font-bold text-slate-900 border-l-4 border-blue-600 pl-4">2.1 {sec2_1Title}</h2>
                   </div>
-                  <p className="text-slate-700 leading-relaxed mb-8 font-serif text-[1.05rem]">
-                    本图谱展示了专刊中涉及的核心文献及其背后的作者和机构网络。通过交互您可以探索团队间的合作关系以及理论演进的学术脉络。
-                  </p>
+                  {sec2_1Description && (
+                    <p className="text-slate-700 leading-relaxed mb-8 font-serif text-[1.05rem]">
+                      {sec2_1Description}
+                    </p>
+                  )}
                   <KnowledgeGraph />
                 </div>
               </section>
@@ -413,7 +417,7 @@ export default function App() {
                 <motion.div
                   {...MOTION_PROPS}
                   key={paper.id}
-                  id={slugify(paper.title)}
+                  id={paper.id}
                   className={`${CARD_CLASS} scroll-mt-24`}
                 >
                   <div className="mb-8 border-b border-slate-200 pb-3">
@@ -448,18 +452,16 @@ export default function App() {
 
           <section id="part4" className="scroll-mt-24">
             <motion.div {...MOTION_PROPS} className={`${CARD_CLASS} space-y-0`}>
-              {[
-                algorithmReproduction.sec4_1, algorithmReproduction.sec4_2,
-                algorithmReproduction.sec4_3, algorithmReproduction.sec4_4,
-                algorithmReproduction.sec4_5,
-              ].map((section, i, arr) => (
-                <React.Fragment key={i}>
-                  <MD>{section}</MD>
-                  {i < arr.length - 1 && (
-                    <div className="my-10 w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
-                  )}
-                </React.Fragment>
-              ))}
+              {Object.entries(algorithmReproduction)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([key, section], i, arr) => (
+                  <React.Fragment key={key}>
+                    <MD>{String(section ?? '')}</MD>
+                    {i < arr.length - 1 && (
+                      <div className="my-10 w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+                    )}
+                  </React.Fragment>
+                ))}
             </motion.div>
           </section>
 

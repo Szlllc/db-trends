@@ -1,8 +1,0 @@
-COPY region   FROM '/home/dmpr/RPT/datasets/TPC-H V3.0.1/data_sf_10/region.tbl'   (DELIMITER '|');
-COPY nation   FROM '/home/dmpr/RPT/datasets/TPC-H V3.0.1/data_sf_10/nation.tbl'   (DELIMITER '|');
-COPY part     FROM '/home/dmpr/RPT/datasets/TPC-H V3.0.1/data_sf_10/part.tbl'     (DELIMITER '|');
-COPY supplier FROM '/home/dmpr/RPT/datasets/TPC-H V3.0.1/data_sf_10/supplier.tbl' (DELIMITER '|');
-COPY customer FROM '/home/dmpr/RPT/datasets/TPC-H V3.0.1/data_sf_10/customer.tbl' (DELIMITER '|');
-COPY partsupp FROM '/home/dmpr/RPT/datasets/TPC-H V3.0.1/data_sf_10/partsupp.tbl' (DELIMITER '|');
-COPY orders   FROM '/home/dmpr/RPT/datasets/TPC-H V3.0.1/data_sf_10/orders.tbl'   (DELIMITER '|');
-COPY lineitem FROM '/home/dmpr/RPT/datasets/TPC-H V3.0.1/data_sf_10/lineitem.tbl' (DELIMITER '|');

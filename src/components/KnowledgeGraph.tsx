@@ -1,6 +1,8 @@
 import React, { useMemo, useRef, useCallback, useEffect } from 'react';
 import ReactECharts from 'echarts-for-react';
-import { knowledgeGraphData } from '../data';
+import mdData from 'virtual:md-data';
+
+const { knowledgeGraphData } = mdData;
 
 // 机构名英译中
 const INST_ZH: Record<string, string> = {
