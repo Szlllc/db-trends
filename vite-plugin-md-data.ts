@@ -54,6 +54,8 @@ export interface MdData {
   referencesData: string;
   glossaryData: string;
   navItems: NavItem[];
+  /** 各章节 H1 标题的原始文本（去掉 '# ' 前缀），用于在 App 中同步显示 */
+  h1Labels: Record<string, string>;
 }
 
 // ────────────────────────────────────────────────────────────
@@ -180,14 +182,18 @@ function extractJsonBlock(text: string): unknown[] {
  * 通过匹配 H1 标题文本，将其映射到数据字段。
  * 对标题改写有一定容错（只需包含关键词）。
  */
+/**
+ * H1 章节识别规则：匹配各章节的关键词。
+ * 去掉数字前缀要求，只匹配语义关键词，对标题改写有较强容错性。
+ */
 const H1_MAPPINGS: Array<{ key: string; match: RegExp }> = [
-  { key: 'preface',              match: /卷首语/         },
-  { key: 'introduction',        match: /^一、|^一、|导语/  },
-  { key: 'chapter2',            match: /^二、/             },
-  { key: 'literatureEvolution', match: /^三、/             },
-  { key: 'algorithmRepro',      match: /^四、/             },
-  { key: 'references',          match: /^五、/             },
-  { key: 'glossary',            match: /^六、/             },
+  { key: 'preface',              match: /卷首语/                       },
+  { key: 'introduction',        match: /一、|导语/                     },
+  { key: 'chapter2',            match: /二、|论文解读|论文精读/          },
+  { key: 'literatureEvolution', match: /三、|综合分析|文献关系|关键技术/ },
+  { key: 'algorithmRepro',      match: /四、|实验复现/                  },
+  { key: 'references',          match: /参考文献/                       },
+  { key: 'glossary',            match: /术语索引|附录/                  },
 ];
 
 function identifyH1(heading: string): string | null {
@@ -206,12 +212,14 @@ export function parseMd(rawContent: string): MdData {
   // 2. 按 H1 切分
   const h1Sections = splitByHeading(md, 1);
 
-  // 收集每个 H1 的内容
+  // 收集每个 H1 的内容，同时记录原始标题文本（用于 App 同步显示）
   const sectionMap: Record<string, string> = {};
+  const h1Labels: Record<string, string> = {};
   for (const { heading, content } of h1Sections) {
     const key = identifyH1(heading);
     if (key) {
       sectionMap[key] = heading + '\n' + content;
+      h1Labels[key] = heading.replace(/^#+\s+/, '').trim();
     }
   }
 
@@ -284,8 +292,9 @@ export function parseMd(rawContent: string): MdData {
   const referencesData = sectionMap['references'] ?? '';
   const glossaryData = sectionMap['glossary'] ?? '';
 
-  // 9. 动态生成 navItems
+  // 9. 动态生成 navItems（传入 h1Labels 以读取实际标题）
   const navItems = buildNavItems(
+    h1Labels,
     introductionData,
     paperDeepDives,
     literatureEvolution,
@@ -306,6 +315,7 @@ export function parseMd(rawContent: string): MdData {
     referencesData,
     glossaryData,
     navItems,
+    h1Labels,
   };
 }
 
@@ -313,20 +323,28 @@ export function parseMd(rawContent: string): MdData {
 //  navItems 动态构建
 // ────────────────────────────────────────────────────────────
 
+/**
+ * 动态构建导航项。
+ * 所有顶级标题的 label 直接取自 MD 文件的 H1 标题文本，不再硬编码。
+ */
 function buildNavItems(
+  h1Labels: Record<string, string>,
   introContent: string,
   paperDeepDives: PaperDeepDive[],
-  _literatureContent: string,
+  literatureContent: string,
   algorithmReproduction: Record<string, string>,
   ch4Content: string,
 ): NavItem[] {
   const items: NavItem[] = [];
 
-  // ── 卷首语 ──
-  items.push({ id: 'preface', label: '卷首语', icon: 'BookOpen' });
+  // 从 h1Labels 读取实际标题；若 MD 没有该章节则用后备值
+  const label = (key: string, fallback: string) => h1Labels[key] ?? fallback;
 
-  // ── 导语：从 introContent 提取 ## 1.x 子节 ──
-  items.push({ id: 'introduction', label: '一、导语', icon: 'BookOpen' });
+  // ── 卷首语 ──
+  items.push({ id: 'preface', label: label('preface', '卷首语'), icon: 'BookOpen' });
+
+  // ── 导语 ──
+  items.push({ id: 'introduction', label: label('introduction', '一、导语'), icon: 'BookOpen' });
   const introH2 = splitByHeading(introContent, 2, 1);
   for (const { heading } of introH2) {
     const text = heading.replace(/^##\s+/, '');
@@ -335,22 +353,27 @@ function buildNavItems(
     }
   }
 
-  // ── 论文精读 ──
-  items.push({ id: 'part2', label: '二、论文精读', icon: 'Target' });
-  items.push({ id: 'part2_1', label: '2.1 研究团队与关联图谱', isSub: true });
+  // ── 论文解读（第二章） ──
+  items.push({ id: 'part2', label: label('chapter2', '二、论文解读'), icon: 'Target' });
+  // 2.1 标题：从 MD 解析
+  const ch2_1Label = (() => {
+    const h2s = splitByHeading(introContent.replace(/^[\s\S]*?(?=## 2\.1)/,''), 2, 1);
+    if (h2s.length) return h2s[0].heading.replace(/^##\s+/, '');
+    return '2.1 研究团队与关联图谱';
+  })();
+  items.push({ id: 'part2_1', label: ch2_1Label, isSub: true });
   for (let i = 0; i < paperDeepDives.length; i++) {
     const p = paperDeepDives[i];
     items.push({
-      id: p.id,          // 使用稳定的数字 ID（sec-2-5/sec-2-6），避免 slugify 冲突
+      id: p.id,
       label: `2.${i + 2} ${p.title}`,
       isSub: true,
     });
   }
 
-  // ── 文献关系 ──
-  items.push({ id: 'part3', label: '三、Yannakakis 关键技术', icon: 'GitMerge' });
-  // 从第三章内容提取 ## 3.x 子节
-  const ch3H2 = splitByHeading(_literatureContent, 2, 1);
+  // ── 第三章 ──
+  items.push({ id: 'part3', label: label('literatureEvolution', '三、综合分析'), icon: 'GitMerge' });
+  const ch3H2 = splitByHeading(literatureContent, 2, 1);
   for (const { heading } of ch3H2) {
     const text = heading.replace(/^##\s+/, '');
     if (/^3\.\d+/.test(text)) {
@@ -359,7 +382,7 @@ function buildNavItems(
   }
 
   // ── 实验复现 ──
-  items.push({ id: 'part4', label: '四、实验复现', icon: 'FileCode' });
+  items.push({ id: 'part4', label: label('algorithmRepro', '四、实验复现'), icon: 'FileCode' });
   const ch4H2 = splitByHeading(ch4Content, 2, 1);
   for (const { heading } of ch4H2) {
     const text = heading.replace(/^##\s+/, '');
@@ -368,9 +391,13 @@ function buildNavItems(
     }
   }
 
-  // ── 参考文献 & 术语索引 ──
-  items.push({ id: 'part5', label: '五、参考文献', icon: 'BookOpen' });
-  items.push({ id: 'part6', label: '六、术语索引', icon: 'BookOpen' });
+  // ── 参考文献 & 术语索引：直接用 MD 的 H1 标题 ──
+  if (h1Labels['references']) {
+    items.push({ id: 'part5', label: h1Labels['references'], icon: 'BookOpen' });
+  }
+  if (h1Labels['glossary']) {
+    items.push({ id: 'part6', label: h1Labels['glossary'], icon: 'BookOpen' });
+  }
 
   return items;
 }

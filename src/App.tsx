@@ -25,6 +25,7 @@ const {
   referencesData,
   glossaryData,
   navItems: mdNavItems,
+  h1Labels,
 } = mdData;
 
 export function slugify(text: string) {
@@ -407,7 +408,7 @@ export default function App() {
                 <div className={CARD_CLASS}>
                   <div className="flex justify-center mb-12">
                     <div className="inline-flex flex-col items-center justify-center text-center">
-                      <h1 className="text-3xl md:text-4xl font-serif font-black tracking-widest text-[#1a233a]">二、论文精读</h1>
+                      <h1 className="text-3xl md:text-4xl font-serif font-black tracking-widest text-[#1a233a]">{h1Labels?.chapter2 ?? '二、论文解读'}</h1>
                       <div className="w-12 h-1 bg-[#1d4ed8] mt-6" />
                     </div>
                   </div>
