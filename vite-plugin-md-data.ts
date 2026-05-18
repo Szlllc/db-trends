@@ -295,6 +295,7 @@ export function parseMd(rawContent: string): MdData {
   // 9. 动态生成 navItems（传入 h1Labels 以读取实际标题）
   const navItems = buildNavItems(
     h1Labels,
+    sec2_1Title,
     introductionData,
     paperDeepDives,
     literatureEvolution,
@@ -329,6 +330,7 @@ export function parseMd(rawContent: string): MdData {
  */
 function buildNavItems(
   h1Labels: Record<string, string>,
+  sec2_1Title: string,
   introContent: string,
   paperDeepDives: PaperDeepDive[],
   literatureContent: string,
@@ -355,13 +357,8 @@ function buildNavItems(
 
   // ── 论文解读（第二章） ──
   items.push({ id: 'part2', label: label('chapter2', '二、论文解读'), icon: 'Target' });
-  // 2.1 标题：从 MD 解析
-  const ch2_1Label = (() => {
-    const h2s = splitByHeading(introContent.replace(/^[\s\S]*?(?=## 2\.1)/,''), 2, 1);
-    if (h2s.length) return h2s[0].heading.replace(/^##\s+/, '');
-    return '2.1 研究团队与关联图谱';
-  })();
-  items.push({ id: 'part2_1', label: ch2_1Label, isSub: true });
+  // 2.1 标题直接用已解析的 sec2_1Title，不再此处搜索 MD
+  items.push({ id: 'part2_1', label: `2.1 ${sec2_1Title}`, isSub: true });
   for (let i = 0; i < paperDeepDives.length; i++) {
     const p = paperDeepDives[i];
     items.push({
